@@ -1,12 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
-  Activity, ArrowDown, Bot, Check, ChevronLeft, ChevronRight, CircleDollarSign,
+  Activity, ArrowDown, Bot, Check, ChevronLeft, ChevronRight,
   Clock3, Gauge, MapPin, Minus, Orbit, Plus, Radio, RotateCcw, Send, Shield,
-  Sparkles, Thermometer, Users, Wind, X, Zap,
+  Sparkles, Thermometer, Users, Wind, Zap,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Starfield } from "@/components/starfield";
+import { TiltCard } from "@/components/tilt-card";
+import { MagneticButton } from "@/components/magnetic-button";
+import { AnimatedNumber } from "@/components/animated-number";
+import { RegistrationFlow } from "@/components/registration-flow";
+import type { Journey } from "@/lib/journey";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [
@@ -20,7 +26,6 @@ export const Route = createFileRoute("/")({
   component: MarsApp,
 });
 
-type Journey = { origin: string; craft: string; destination: string; travelers: number; residence: string; perks: string[]; activities: string[] };
 const initial: Journey = { origin: "New York", craft: "Ares Sovereign", destination: "Olympus Mons", travelers: 2, residence: "Horizon Villa", perks: ["Panoramic View"], activities: ["Low-G Flight"] };
 const origins = ["New York", "London", "Dubai", "Singapore", "Tokyo", "Sydney"];
 const crafts = [
@@ -60,19 +65,21 @@ function MarsApp() {
   }, [journey]);
   const update = <K extends keyof Journey>(key: K, value: Journey[K]) => setJourney(j => ({ ...j, [key]: value }));
   const activeDestination = destinations[hotspot] ?? destinations[0];
+  const accessTier = destinations.find(d => d.name === journey.destination)?.access ?? "STANDARD";
   const scrollBuilder = () => document.getElementById("builder")?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" });
 
-  if (confirmed) return <Confirmation journey={journey} total={total} onModify={() => setConfirmed(false)} onReset={() => { setJourney(initial); setStep(0); setConfirmed(false); }} />;
+  if (confirmed) return <RegistrationFlow journey={journey} total={total} accessTier={accessTier} onBack={() => setConfirmed(false)} onReset={() => { setJourney(initial); setStep(0); setConfirmed(false); }} />;
 
   return <main className="min-h-screen overflow-hidden bg-background text-foreground">
     <section onMouseMove={e => setPointer({ x: (e.clientX / innerWidth - .5) * 14, y: (e.clientY / innerHeight - .5) * 14 })} className="scan-grid relative flex min-h-[92vh] items-center overflow-hidden border-b border-border px-5 pb-24 pt-20 md:px-12">
+      <Starfield className="pointer-events-none absolute inset-0 opacity-60" />
       <div className="absolute inset-0 opacity-20"><div className="animate-scan h-px w-full bg-secondary" /></div>
       <div className="relative z-10 mx-auto grid w-full max-w-7xl items-center gap-10 lg:grid-cols-[.8fr_1.2fr]">
         <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }}>
           <p className="mb-5 font-display text-xs font-semibold uppercase tracking-[.3em] text-secondary">Interplanetary passage authority · 2100</p>
           <h1 className="font-display text-6xl font-bold tracking-[.12em] text-foreground sm:text-8xl">MARS<br/><span className="text-primary">2100</span></h1>
           <p className="mt-6 min-h-14 max-w-xl font-display text-lg uppercase tracking-[.12em] text-muted-foreground">Beyond Earth. Beyond ordinary. Your private passage awaits.</p>
-          <Button variant="mars" size="lg" onClick={scrollBuilder} className="mt-8 h-12 px-7 font-display tracking-[.12em]">BUILD YOUR JOURNEY <ArrowDown /></Button>
+          <MagneticButton className="mt-8"><Button variant="mars" size="lg" onClick={scrollBuilder} className="h-12 px-7 font-display tracking-[.12em]">BUILD YOUR JOURNEY <ArrowDown /></Button></MagneticButton>
         </motion.div>
         <div className="relative mx-auto aspect-square w-full max-w-[650px]" style={{ transform: `translate(${pointer.x}px, ${pointer.y}px)` }}>
           <div className="absolute inset-[7%] rounded-full border border-secondary/20" />
@@ -122,7 +129,7 @@ function MarsApp() {
 
 function Hud({ icon, label, value, pulse=false }: { icon: React.ReactNode; label:string; value:string; pulse?:boolean }) { return <div className="flex items-center gap-3"><span className="text-secondary [&_svg]:size-4">{icon}</span><span><small className="block font-display text-[9px] tracking-[.15em] text-muted-foreground">{label}</small><b className="font-display text-xs font-medium text-foreground">{pulse && <i className="mr-2 inline-block size-1.5 animate-pulse rounded-full bg-secondary"/>}{value}</b></span></div> }
 function SectionHead({ code, title, sub }: { code:string; title:string; sub:string }) { return <div className="mb-10"><p className="font-display text-xs tracking-[.25em] text-primary">{code}</p><h2 className="mt-2 font-display text-4xl font-semibold uppercase tracking-[.08em] md:text-5xl">{title}</h2><p className="mt-3 max-w-2xl text-sm text-muted-foreground">{sub}</p></div> }
-function Choice({ active, title, meta, onClick }: { active:boolean; title:string; meta?:string; onClick:()=>void }) { return <Button variant="hud" onClick={onClick} className={`h-auto min-h-24 w-full whitespace-normal p-5 text-left ${active ? "border-primary bg-accent shadow-[0_0_20px_var(--glow-primary)]" : ""}`}><span className="block w-full"><span className="flex items-center justify-between font-display text-base uppercase tracking-[.08em]">{title}{active && <Check className="text-primary"/>}</span>{meta && <small className="mt-2 block text-xs font-normal text-muted-foreground">{meta}</small>}</span></Button> }
+function Choice({ active, title, meta, onClick }: { active:boolean; title:string; meta?:string; onClick:()=>void }) { return <TiltCard className="h-full"><Button variant="hud" onClick={onClick} className={`h-auto min-h-24 w-full whitespace-normal p-5 text-left ${active ? "border-primary bg-accent shadow-[0_0_20px_var(--glow-primary)]" : ""}`}><span className="block w-full"><span className="flex items-center justify-between font-display text-base uppercase tracking-[.08em]">{title}{active && <Check className="text-primary"/>}</span>{meta && <small className="mt-2 block text-xs font-normal text-muted-foreground">{meta}</small>}</span></Button></TiltCard> }
 
 function StepContent({ step, journey, update, onEdit }: { step:number; journey:Journey; update:<K extends keyof Journey>(k:K,v:Journey[K])=>void; onEdit:(step:number)=>void }) {
   const toggleList = (key: "perks"|"activities", item:string) => update(key, journey[key].includes(item) ? journey[key].filter(x=>x!==item) : [...journey[key], item]);
@@ -137,7 +144,7 @@ function StepContent({ step, journey, update, onEdit }: { step:number; journey:J
   </div>
 }
 
-function TripSummary({journey,total,onReset,onConfirm}:{journey:Journey;total:number;onReset:()=>void;onConfirm:()=>void}) { return <aside className="hud-panel top-24 p-6 lg:sticky"><p className="font-display text-xs tracking-[.2em] text-secondary">LIVE EXPEDITION PROFILE</p><div className="mt-6 space-y-4 text-sm"><Summary icon={<Orbit/>} label="Spacecraft" value={journey.craft}/><Summary icon={<MapPin/>} label="Destination" value={journey.destination}/><Summary icon={<Shield/>} label="Residence" value={journey.residence}/><Summary icon={<Users/>} label="Travelers" value={String(journey.travelers)}/><Summary icon={<Activity/>} label="Experiences" value={String(journey.activities.length)}/></div><div className="mt-7 border-y border-border py-5"><span className="text-[10px] uppercase tracking-[.18em] text-muted-foreground">Total private passage</span><motion.p key={total} initial={{opacity:.4,y:4}} animate={{opacity:1,y:0}} className="mt-1 font-display text-4xl font-semibold text-primary">¤{total.toFixed(1)}M</motion.p></div><div className="mt-5 grid grid-cols-2 gap-2"><Button variant="hud" onClick={onReset}><RotateCcw/> RESET</Button><Button variant="mars" onClick={onConfirm}><Check/> CONFIRM</Button></div></aside> }
+function TripSummary({journey,total,onReset,onConfirm}:{journey:Journey;total:number;onReset:()=>void;onConfirm:()=>void}) { return <aside className="hud-panel top-24 p-6 lg:sticky"><p className="font-display text-xs tracking-[.2em] text-secondary">LIVE EXPEDITION PROFILE</p><div className="mt-6 space-y-4 text-sm"><Summary icon={<Orbit/>} label="Spacecraft" value={journey.craft}/><Summary icon={<MapPin/>} label="Destination" value={journey.destination}/><Summary icon={<Shield/>} label="Residence" value={journey.residence}/><Summary icon={<Users/>} label="Travelers" value={String(journey.travelers)}/><Summary icon={<Activity/>} label="Experiences" value={String(journey.activities.length)}/></div><div className="mt-7 border-y border-border py-5"><span className="text-[10px] uppercase tracking-[.18em] text-muted-foreground">Total private passage</span><p className="mt-1 font-display text-4xl font-semibold text-primary"><AnimatedNumber value={total} decimals={1} prefix="¤" suffix="M" /></p></div><div className="mt-5 grid grid-cols-2 gap-2"><Button variant="hud" onClick={onReset}><RotateCcw/> RESET</Button><Button variant="mars" onClick={onConfirm}><Check/> CONFIRM</Button></div></aside> }
 function Summary({icon,label,value}:{icon:React.ReactNode;label:string;value:string}) { return <div className="flex gap-3"><span className="text-primary [&_svg]:size-4">{icon}</span><span><small className="block text-[9px] uppercase tracking-[.15em] text-muted-foreground">{label}</small><b className="font-display text-xs font-medium">{value}</b></span></div> }
 
 function Aura({journey,update}:{journey:Journey;update:<K extends keyof Journey>(k:K,v:Journey[K])=>void}) {
@@ -148,4 +155,3 @@ function Aura({journey,update}:{journey:Journey;update:<K extends keyof Journey>
 
 function RiskPanel(){const risks=[{name:"Radiation",icon:<Zap/>,earth:12,mars:68,unit:"mSv index"},{name:"Gravity",icon:<Gauge/>,earth:100,mars:38,unit:"relative force"},{name:"Dust Storms",icon:<Wind/>,earth:8,mars:72,unit:"seasonal risk"},{name:"Thermal Range",icon:<Thermometer/>,earth:24,mars:81,unit:"variance"}];const [open,setOpen]=useState(1);return <section className="mx-auto max-w-7xl px-5 py-24"><SectionHead code="03 / ENVIRONMENT" title="Risk & Weather" sub="Live comparative modeling for your selected landing season."/><div className="grid gap-3 md:grid-cols-4">{risks.map((r,i)=><Button key={r.name} variant="hud" onClick={()=>setOpen(i)} className={`h-auto flex-col items-stretch whitespace-normal p-5 text-left ${open===i?"border-secondary":""}`}><span className="flex items-center gap-3 font-display uppercase tracking-[.08em] text-secondary">{r.icon}{r.name}</span><AnimatePresence>{open===i&&<motion.span initial={{height:0,opacity:0}} animate={{height:"auto",opacity:1}} exit={{height:0,opacity:0}} className="mt-6 block overflow-hidden"><small className="mb-2 flex justify-between">EARTH <b>{r.earth}%</b></small><i className="mb-4 block h-1 bg-muted"><motion.i initial={{width:0}} animate={{width:`${r.earth}%`}} className="block h-full bg-muted-foreground"/></i><small className="mb-2 flex justify-between">MARS <b>{r.mars}%</b></small><i className="block h-1 bg-muted"><motion.i initial={{width:0}} animate={{width:`${r.mars}%`}} className="block h-full bg-primary"/></i><em className="mt-4 block text-[10px] not-italic text-muted-foreground">{r.unit} · mitigated by expedition systems</em></motion.span>}</AnimatePresence></Button>)}</div></section>}
 
-function Confirmation({journey,total,onModify,onReset}:{journey:Journey;total:number;onModify:()=>void;onReset:()=>void}){return <main className="scan-grid flex min-h-screen items-center justify-center bg-background p-5 text-foreground"><motion.div initial={{opacity:0,scale:.96}} animate={{opacity:1,scale:1}} className="w-full max-w-5xl"><p className="text-center font-display text-xs tracking-[.3em] text-secondary">EXPEDITION PROFILE CREATED</p><h1 className="mt-4 text-center font-display text-5xl font-bold tracking-[.1em] md:text-7xl">WELCOME TO <span className="text-primary">MARS 2100</span></h1><div className="my-12 flex flex-wrap items-center justify-center gap-3 font-display text-sm uppercase"><span>{journey.origin}</span><ChevronRight className="text-primary"/><span>{journey.craft}</span><ChevronRight className="text-primary"/><span>{journey.destination}</span><ChevronRight className="text-primary"/><span>{journey.residence}</span><ChevronRight className="text-primary"/><span>{journey.activities.length} experiences</span></div><div className="hud-panel mx-auto max-w-xl p-7 text-center"><CircleDollarSign className="mx-auto mb-3 size-8 text-secondary"/><small className="tracking-[.2em] text-muted-foreground">PRIVATE PASSAGE ESTIMATE</small><p className="mt-2 font-display text-5xl text-primary">¤{total.toFixed(1)}M</p><p className="mt-3 text-sm text-muted-foreground">{journey.travelers} travelers · {journey.destination} · dossier M21-{Date.now().toString().slice(-6)}</p></div><div className="mt-10 flex flex-wrap justify-center gap-3"><Button variant="mars" onClick={onModify}>VIEW / MODIFY</Button><Button variant="hud" onClick={onReset}><RotateCcw/> START AGAIN</Button></div></motion.div></main>}
