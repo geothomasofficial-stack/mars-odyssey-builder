@@ -59,6 +59,7 @@ function MarsApp() {
     return (craft + residence + perk + journey.activities.length * 2.4) * journey.travelers;
   }, [journey]);
   const update = <K extends keyof Journey>(key: K, value: Journey[K]) => setJourney(j => ({ ...j, [key]: value }));
+  const activeDestination = destinations[hotspot] ?? destinations[0];
   const scrollBuilder = () => document.getElementById("builder")?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" });
 
   if (confirmed) return <Confirmation journey={journey} total={total} onModify={() => setConfirmed(false)} onReset={() => { setJourney(initial); setStep(0); setConfirmed(false); }} />;
@@ -79,9 +80,9 @@ function MarsApp() {
           <div className="mars-surface animate-mars absolute inset-[18%] rounded-full" />
           {destinations.map((d, i) => <Button key={d.name} aria-label={`Open ${d.name}`} title={d.name} variant="ghost" size="icon" onClick={() => setHotspot(i)} className={`absolute z-20 ${d.pos} rounded-full border border-secondary bg-secondary/20 text-secondary shadow-[0_0_20px_var(--glow-secondary)]`}><span className="animate-pulse-ring absolute inset-0 rounded-full border border-secondary"/><MapPin /></Button>)}
           <AnimatePresence mode="wait"><motion.div key={hotspot} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="hud-panel absolute bottom-0 right-0 z-30 w-64 p-5">
-            <p className="font-display text-lg font-semibold text-primary">{destinations[hotspot].name}</p>
-            <div className="my-4 grid grid-cols-3 gap-2 text-[10px] uppercase text-muted-foreground"><span>Distance<b className="mt-1 block text-foreground">{destinations[hotspot].distance}</b></span><span>Temp<b className="mt-1 block text-foreground">{destinations[hotspot].temp}</b></span><span>Access<b className="mt-1 block text-secondary">{destinations[hotspot].access}</b></span></div>
-            <Button variant="hud" size="sm" className="w-full text-[10px]" onClick={() => { update("destination", destinations[hotspot].name); scrollBuilder(); }}>ADD TO EXPEDITION</Button>
+            <p className="font-display text-lg font-semibold text-primary">{activeDestination?.name}</p>
+            <div className="my-4 grid grid-cols-3 gap-2 text-[10px] uppercase text-muted-foreground"><span>Distance<b className="mt-1 block text-foreground">{activeDestination?.distance}</b></span><span>Temp<b className="mt-1 block text-foreground">{activeDestination?.temp}</b></span><span>Access<b className="mt-1 block text-secondary">{activeDestination?.access}</b></span></div>
+            <Button variant="hud" size="sm" className="w-full text-[10px]" disabled={!activeDestination} onClick={() => { if (!activeDestination) return; update("destination", activeDestination.name); scrollBuilder(); }}>ADD TO EXPEDITION</Button>
           </motion.div></AnimatePresence>
         </div>
       </div>
